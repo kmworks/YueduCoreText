@@ -397,6 +397,12 @@ enum BlockLayout {
             heightSpec = resolve(style.height, style: style, ctx: ctx)
         }
         let maxWidth = style.maxWidth.flatMap { resolve($0, style: style, ctx: ctx) }
+        let maxHeight = style.maxHeight.flatMap { length -> CGFloat? in
+            // Percentages resolve against the containing block's height, which
+            // normal-flow layout has no definite input for — same as height.
+            if case .percent = length { return nil }
+            return resolve(length, style: style, ctx: ctx)
+        }
 
         var w: CGFloat
         var h: CGFloat
@@ -418,6 +424,11 @@ enum BlockLayout {
             let scale = maxW / w
             w = maxW
             h *= scale
+        }
+        if let maxH = maxHeight, h > maxH {
+            let scale = maxH / h
+            h = maxH
+            w *= scale
         }
         // Clamping to container width if intrinsically larger: CSS standard behavior.
         if containerWidth > 0 && w > containerWidth {

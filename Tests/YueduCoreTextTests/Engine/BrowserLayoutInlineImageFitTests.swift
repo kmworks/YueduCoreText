@@ -51,4 +51,21 @@ struct BrowserLayoutInlineImageFitTests {
         #expect(abs(rect.width - 100) < 0.5)
         #expect(abs(rect.minX - (3.75 + (367.5 - 100) / 2)) < 0.5)
     }
+
+    @Test func authoredMaxHeightCapsOversizedInlineImageBeforeAlignment() async throws {
+        let image = BrowserLayoutTestSupport.makeImage(size: CGSize(width: 246, height: 1400), color: .gray)
+        let (pages, _) = try await BrowserLayoutTestSupport.layout(
+            chapterHTML, cssTexts: [chapterCSS + "\nimg { max-height: 760px !important; }"],
+            width: 375, height: 800,
+            imageLoader: { _ in image }
+        )
+        let images = BrowserLayoutTestSupport.allImageFragments(pages)
+        #expect(images.count == 1)
+        let rect = try #require(images.first).rect.rawValue
+        // The 760px cap wins over the 800pt page fit, aspect preserved, and
+        // centering uses the capped width.
+        #expect(abs(rect.height - 760) < 0.5)
+        #expect(abs(rect.width - 246 * 760 / 1400) < 0.5)
+        #expect(abs(rect.minX - (3.75 + (367.5 - 246 * 760 / 1400) / 2)) < 0.5)
+    }
 }
