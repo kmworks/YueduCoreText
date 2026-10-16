@@ -55,17 +55,34 @@ struct BrowserLayoutInlineImageFitTests {
     @Test func authoredMaxHeightCapsOversizedInlineImageBeforeAlignment() async throws {
         let image = BrowserLayoutTestSupport.makeImage(size: CGSize(width: 246, height: 1400), color: .gray)
         let (pages, _) = try await BrowserLayoutTestSupport.layout(
-            chapterHTML, cssTexts: [chapterCSS + "\nimg { max-height: 760px !important; }"],
+            chapterHTML, cssTexts: [chapterCSS + "\nimg { max-height: 95vh !important; }"],
             width: 375, height: 800,
             imageLoader: { _ in image }
         )
         let images = BrowserLayoutTestSupport.allImageFragments(pages)
         #expect(images.count == 1)
         let rect = try #require(images.first).rect.rawValue
-        // The 760px cap wins over the 800pt page fit, aspect preserved, and
-        // centering uses the capped width.
+        // 95vh = 760pt of the 800pt page; the cap wins over the page fit,
+        // aspect preserved, and centering uses the capped width.
         #expect(abs(rect.height - 760) < 0.5)
         #expect(abs(rect.width - 246 * 760 / 1400) < 0.5)
         #expect(abs(rect.minX - (3.75 + (367.5 - 246 * 760 / 1400) / 2)) < 0.5)
+    }
+
+    @Test func authoredMaxWidthResolvesVwAgainstTheViewport() async throws {
+        let image = BrowserLayoutTestSupport.makeImage(size: CGSize(width: 300, height: 400), color: .gray)
+        let (pages, _) = try await BrowserLayoutTestSupport.layout(
+            chapterHTML, cssTexts: [chapterCSS + "\nimg { max-width: 50vw !important; }"],
+            width: 375, height: 800,
+            imageLoader: { _ in image }
+        )
+        let images = BrowserLayoutTestSupport.allImageFragments(pages)
+        #expect(images.count == 1)
+        let rect = try #require(images.first).rect.rawValue
+        // 50vw = 187.5pt of the 375pt viewport, aspect preserved; the 250pt
+        // height needs no page fit, so the vw cap alone decides the geometry.
+        #expect(abs(rect.width - 187.5) < 0.5)
+        #expect(abs(rect.height - 250) < 0.5)
+        #expect(abs(rect.minX - (3.75 + (367.5 - 187.5) / 2)) < 0.5)
     }
 }
