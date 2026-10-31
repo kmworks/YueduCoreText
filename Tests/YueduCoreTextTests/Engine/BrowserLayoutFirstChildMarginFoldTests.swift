@@ -72,6 +72,10 @@ struct BrowserLayoutFirstChildMarginFoldTests {
         #expect(abs(y - (5 + 34)) < 0.5)
     }
 
+    // A floated parent establishes a BFC, so its own margin never collapses
+    // with its first in-flow child's margin (CSS 2.1 §8.3.1): the child margin
+    // applies inside the float, and a negative one sticks out above it.
+
     @Test func floatParentKeepsFirstChildNegativeMargin() async throws {
         let css = baseCSS + "\n.f { float: right; width: 1em; margin-top: 120px; } .n { margin-top: -4px; }"
         let y = try await firstTextY(

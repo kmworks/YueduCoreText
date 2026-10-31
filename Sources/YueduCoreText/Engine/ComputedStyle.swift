@@ -107,9 +107,9 @@ enum CSSClear: Equatable {
 }
 
 enum CSSVerticalAlign: Equatable {
-    case baseline, sup, sub
-    /// Cell alignment values; inline layout ignores them (their offset is 0).
-    case top, middle, bottom
+    /// `sup`/`sub` shift inline runs; `top`/`middle`/`bottom` align table
+    /// cells; `baseline` is the initial value.
+    case baseline, sup, sub, top, middle, bottom
 }
 
 /// CSS 2.1 §17.6. Only the separated model is implemented; collapse is an
@@ -132,6 +132,12 @@ struct ComputedStyle: Equatable {
     var cssClear: CSSClear = .none
     var verticalAlign: CSSVerticalAlign = .baseline
 
+    /// Resolved super/sub baseline shift (0 for baseline). CSS 2.1 §10.8.1
+    /// leaves the amount UA-defined; the value is computed from the PARENT
+    /// box's font-size, never this element's own — see the vertical-align
+    /// handling in ComputedStyleTreeBuilder.
+    var verticalAlignOffset: CGFloat = 0
+
     /// Table `border-collapse`; layout only ever runs on `.separate`.
     var borderCollapse: CSSBorderCollapse = .separate
     /// `border-spacing` horizontal/vertical. nil = the UA default (2px), applied
@@ -139,12 +145,6 @@ struct ComputedStyle: Equatable {
     /// against the table's font size at layout time.
     var borderSpacingHorizontal: CSSLength? = nil
     var borderSpacingVertical: CSSLength? = nil
-
-    /// Resolved super/sub baseline shift (0 for baseline). CSS 2.1 §10.8.1
-    /// leaves the amount UA-defined; the value is computed from the PARENT
-    /// box's font-size, never this element's own — see the vertical-align
-    /// handling in ComputedStyleTreeBuilder.
-    var verticalAlignOffset: CGFloat = 0
 
     var isFloated: Bool {
         cssFloat == .left || cssFloat == .right

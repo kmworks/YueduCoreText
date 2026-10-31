@@ -469,6 +469,12 @@ final class ComputedStyleTreeBuilder {
         style.finalizeLineHeight(rootFontSize: rootFontSize)
         style.finalizeLetterSpacing(rootFontSize: rootFontSize)
         style.finalizeBorderLengths(rootFontSize: rootFontSize)
+        // vertical-align shifts inline-level boxes only (CSS 2.1 §10.8.1): a
+        // block container or table cell never raises its own text, and a cell
+        // reads the keyword as its alignment instead.
+        if style.display != .inline, style.display != .inlineBlock {
+            style.verticalAlignOffset = 0
+        }
         if let report = readerConfig.onDiagnostic {
             let path = Self.diagnosticPath(element)
             for rule in matched {
@@ -638,11 +644,11 @@ enum ComputedStylePropertyApplier {
             default: break
             }
         case "vertical-align":
-            // Only super/sub shift the baseline; top/middle/bottom are table-cell
-            // alignment values and keep a zero inline offset; length values
-            // degrade to baseline instead of rejecting the chapter. The shift
-            // matches WebKit (InlineLineBoxVerticalAligner): the PARENT box's
-            // font-size / 3 + 1 up (sub: / 5 + 1 down).
+            // super/sub shift the baseline; top/middle/bottom align table
+            // cells. Length values degrade to baseline instead of rejecting
+            // the chapter. The shift matches WebKit
+            // (InlineLineBoxVerticalAligner): the PARENT box's font-size / 3 + 1
+            // up (sub: / 5 + 1 down).
             switch value {
             case "baseline":
                 style.verticalAlign = .baseline
